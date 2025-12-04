@@ -1,0 +1,82 @@
+
+
+% reset
+close all;
+clear all;
+clc;
+
+% setup
+NUM_ANA= 8; % antenna number (at transmitter)
+NUM_MS= 2;  % mobile station number (receiver)
+
+CARR_FREQ= 2.4e9;  % Hz. carrier frequency
+WAVE_LEN= physconst('LightSpeed')/CARR_FREQ;  % wave length
+ANTENNA_DIS= WAVE_LEN/2;  % distance between two antennas
+
+% Channel Gain
+CHAN_GAIN= ones(1,NUM_MS);  % channel gain (ideal channel)
+ANGLE_MS= [-33,  10];   % MSs normal angle
+
+sigma_i= sqrt(0.01)*ones(1,NUM_MS);  % noise
+gamma_dB= 10; % SINR_dB
+gamma_0 = sqrt(10^(gamma_dB/10)); % SINR
+
+h=zeros(NUM_ANA, NUM_MS);
+for i=1:NUM_MS
+    h(:,i)=CHAN_GAIN(i)*[exp(j*[0:NUM_ANA-1].'*2*pi*ANTENNA_DIS*sin(ANGLE_MS(i)*pi/180)/WAVE_LEN)];
+end
+
+
+cvx_begin
+% variable and expression declare
+   variable w(NUM_ANA, NUM_MS) complex
+   variable t
+   expression second_Hw(NUM_MS,NUM_MS+1)
+   H=[];
+for i=1:NUM_MS
+   H=[H; h(:,i).'];
+end
+   H2=H*[w,zeros(NUM_ANA,1)];
+for i=1:NUM_MS
+   H2(i,i)= 0;
+end
+   H2(:,NUM_MS+1)= sigma_i.';
+   
+%  objective function 
+    minimize(t);
+    subject to
+   
+% constraint 1
+    norm(w,'fro')<=t;
+    
+% constraint 2
+for i=1:NUM_MS
+    real((h(:,i).')*w(:,i)) >=0;
+    imag((h(:,i).')*w(:,i)) == 0;
+
+% constraint 3
+    {H2(i,:).',(1/gamma_0)*(h(:,i).')*w(:,i)} <In> complex_lorentz(NUM_MS+1);
+end
+
+cvx_end
+
+
+% plot angle spectrum
+steering_vec_plot=[];
+for i=-90:1:90
+    steering_vec_plot=[steering_vec_plot; exp(-j*[0:NUM_ANA-1]*2*pi*ANTENNA_DIS*sin(i*pi/180)/WAVE_LEN)];
+end
+
+f=  figure;
+plot( [-90:1:90], 10*log10(abs(w'*steering_vec_plot.').^2));
+title('Minimizing the total transmit power')
+legend('MS at -33^\circ', 'MS at 10^\circ');
+hold on
+grid on
+xlabel('Angle(degree)');
+ylabel('Angle Response(db)');
+xlim([-90, 90])
+hold off
+
+
+saveas(f, 'problem4a.png')
