@@ -1,4 +1,5 @@
-% plot all together
+% Overlay the problem 3(a)/3(b) beams plus the Problem 2 baseline.
+% Lets us visually compare average vs worst-case designs and aperture size.
 
 close all;
 clear all;
@@ -38,6 +39,7 @@ saveas(f, 'problem3b_1.png')
 
 
 function [x1_, y1_] = loadfromfig(filename)
+    % Helper: open a .fig, read its line plot data, then close it again.
     f1 = openfig(filename);
     lineHandle = findobj(f1, 'Type', 'line');
     

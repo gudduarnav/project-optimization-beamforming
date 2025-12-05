@@ -1,4 +1,5 @@
-% plot all together
+% Utility script: overlay Problem 2 beam patterns for comparison.
+% Shows how changing the desired beam window affects the sidelobe floor.
 
 close all;
 clear all;
@@ -36,6 +37,7 @@ saveas(gca, 'problem2together.png')
 
 
 function [x1_, y1_] = loadfromfig(filename)
+    % Helper that pulls the (x,y) line data out of a saved MATLAB .fig file.
     f1 = openfig(filename);
     lineHandle = findobj(f1, 'Type', 'line');
     

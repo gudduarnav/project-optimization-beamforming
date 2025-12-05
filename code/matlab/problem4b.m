@@ -1,70 +1,74 @@
-
+% Problem 4 – Downlink Beamforming with SINR Constraints (4 users)
+% -------------------------------------------------------------------------
+% Same convex formulation as problem4a.m, but now 4 transmit antennas and
+% 4 users located at different angles.  Extra comments highlight how the
+% constraints scale with user count.
 
 % reset
 close all;
 clear all;
 clc;
 
-% setup
-NUM_ANA= 4; % antenna number (at transmitter)
-NUM_MS= 4;  % mobile station number (receiver)
+% setup -------------------------------------------------------------
+NUM_ANA = 4; % Transmit antennas.
+NUM_MS = 4;  % Users to serve simultaneously.
 
-CARR_FREQ= 2.4e9;  % Hz. carrier frequency
-WAVE_LEN= physconst('LightSpeed')/CARR_FREQ;  % wave length
-ANTENNA_DIS= WAVE_LEN/2;  % distance between two antennas
+CARR_FREQ = 2.4e9;                             % Hz.
+WAVE_LEN = physconst('LightSpeed')/CARR_FREQ;  % meters.
+ANTENNA_DIS = WAVE_LEN/2;                      % Uniform spacing.
 
-% Channel Gain
-CHAN_GAIN= ones(1,NUM_MS);  % channel gain (ideal channel)
-ANGLE_MS= [-33, -78, 10, 64];   % MSs normal angle
+% Simple channel model: each user sees a steering vector at its angle.
+CHAN_GAIN = ones(1,NUM_MS);
+ANGLE_MS = [-33, -78, 10, 64];   % Angles of departure for each user.
 
-sigma_i= sqrt(0.01)*ones(1,NUM_MS);  % noise
-gamma_dB= 10; % SINR_dB
-gamma_0 = sqrt(10^(gamma_dB/10)); % SINR
+sigma_i = sqrt(0.01)*ones(1,NUM_MS);  % Noise variance per receiver.
+gamma_dB = 10;
+gamma_0 = sqrt(10^(gamma_dB/10));     % Linear amplitude target.
 
-h=zeros(NUM_ANA, NUM_MS);
+h = zeros(NUM_ANA, NUM_MS);
 for i=1:NUM_MS
-    h(:,i)=CHAN_GAIN(i)*[exp(j*[0:NUM_ANA-1].'*2*pi*ANTENNA_DIS*sin(ANGLE_MS(i)*pi/180)/WAVE_LEN)];
+    h(:,i) = CHAN_GAIN(i)*exp(1j*(0:NUM_ANA-1).' * 2*pi*ANTENNA_DIS*sin(ANGLE_MS(i)*pi/180)/WAVE_LEN);
 end
 
 
 cvx_begin
-% variable and expression declare
-   variable w(NUM_ANA, NUM_MS) complex
-   variable t
-   expression second_Hw(NUM_MS,NUM_MS+1)
-   H=[];
-for i=1:NUM_MS
-   H=[H; h(:,i).'];
-end
-   H2=H*[w,zeros(NUM_ANA,1)];
-for i=1:NUM_MS
-   H2(i,i)= 0;
-end
-   H2(:,NUM_MS+1)= sigma_i.';
+    % Variables: w(:,k) is the beam for user k, t upper-bounds ||W||_F.
+    variable w(NUM_ANA, NUM_MS) complex
+    variable t
+    expression second_Hw(NUM_MS,NUM_MS+1)
+
+    % Build block matrix capturing multiuser interference + noise.
+    H = [];
+    for i=1:NUM_MS
+        H = [H; h(:,i).'];
+    end
+    H2 = H*[w,zeros(NUM_ANA,1)];
+    for i=1:NUM_MS
+        H2(i,i) = 0;           % Remove desired signal path (only interference remains).
+    end
+    H2(:,NUM_MS+1) = sigma_i.';  % Last col = noise.
    
-%  objective function 
+    %  objective function 
     minimize(t);
     subject to
-   
-% constraint 1
-    norm(w,'fro')<=t;
+        % constraint 1: total power <= t.
+        norm(w,'fro') <= t;
     
-% constraint 2
-for i=1:NUM_MS
-    real((h(:,i).')*w(:,i)) >=0;
-    imag((h(:,i).')*w(:,i)) == 0;
+        for i=1:NUM_MS
+            % constraint 2: fix phase of desired signal.
+            real((h(:,i).')*w(:,i)) >=0;
+            imag((h(:,i).')*w(:,i)) == 0;
 
-% constraint 3
-    {H2(i,:).',(1/gamma_0)*(h(:,i).')*w(:,i)} <In> complex_lorentz(NUM_MS+1);
-end
-
+            % constraint 3: SOC SINR constraint.
+            {H2(i,:).',(1/gamma_0)*(h(:,i).')*w(:,i)} <In> complex_lorentz(NUM_MS+1);
+        end
 cvx_end
 
 
 % plot angle spectrum
 steering_vec_plot=[];
 for i=-90:1:90
-    steering_vec_plot=[steering_vec_plot; exp(-j*[0:NUM_ANA-1]*2*pi*ANTENNA_DIS*sin(i*pi/180)/WAVE_LEN)];
+    steering_vec_plot=[steering_vec_plot; exp(-1j*[0:NUM_ANA-1]*2*pi*ANTENNA_DIS*sin(i*pi/180)/WAVE_LEN)];
 end
 
 f=  figure;
