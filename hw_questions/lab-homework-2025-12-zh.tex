@@ -1,0 +1,197 @@
+\documentclass[11pt,letterpaper]{ctexart}
+\usepackage[margin=0.65in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\definecolor{zhprimary}{RGB}{145,0,110}
+\definecolor{zhsecondary}{RGB}{0,140,160}
+\definecolor{zhaccent}{RGB}{255,140,0}
+\definecolor{zhlight}{RGB}{252,246,255}
+
+\setCJKmainfont{Noto Serif CJK TC}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=zhprimary,
+  urlcolor=zhsecondary,
+  citecolor=zhprimary
+}
+
+\tcbset{
+  zhproblemstyle/.style={
+    enhanced,
+    breakable,
+    colframe=zhsecondary,
+    colback=zhlight,
+    boxrule=0.9pt,
+    arc=4pt,
+    outer arc=4pt,
+    fonttitle=\bfseries,
+    coltitle=white,
+    colbacktitle=zhprimary,
+    attach boxed title to top left={yshift=-2mm,xshift=2mm},
+    boxed title style={
+      boxrule=0pt,
+      sharp corners,
+      left=4mm,right=4mm,top=1mm,bottom=1mm
+    }
+  }
+}
+
+\newtcolorbox{zhProblemBox}[1][]{zhproblemstyle,#1}
+
+\newtcolorbox{zhtitleBox}{
+  enhanced,
+  colback=white,
+  colframe=zhprimary,
+  boxrule=1pt,
+  arc=5pt,
+  left=8mm,right=8mm,top=4mm,bottom=5mm,
+  borderline west={2mm}{0pt}{zhaccent},
+  overlay={
+    \path[fill=zhsecondary!20!white]
+      (frame.north west) -- ([xshift=1.2cm]frame.north west) --
+      ([yshift=-0.25cm]frame.north east) -- (frame.north east) -- cycle;
+  }
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{zhprimary} 最適化理論實驗作業}
+\fancyhead[R]{\small\color{zhsecondary} CVX 專題（中文說明）}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{zhsecondary}\leaders\hrule height \headrulewidth\hfill}}
+\setlength{\headheight}{15pt}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\begin{document}
+
+\begin{zhtitleBox}
+  \centering
+  {\small\textsc{Optimization Theory Course}}\\[0.2em]
+  {\LARGE\bfseries 最適化理論實驗作業 -- CVX 專題}\\[0.35em]
+  {\large\color{zhprimary} 實驗作業題目（繁體中文說明）}\\[0.35em]
+  {\normalsize 繳交截止日期：2025 年 12 月 2 日}\\[0.6em]
+  {\footnotesize\color{zhprimary}\itshape
+    本文件為英文作業說明的繁體中文翻譯版本，僅供閱讀與輔助理解之用。\\
+    正式繳交的作業解答與報告必須以英文撰寫。}\\[0.4em]
+  {\footnotesize\color{zhsecondary}\itshape
+    原始英文作業與 MATLAB（CVX）／Python（CVXPY）程式碼請參考 GitHub 倉庫：\\
+    \url{https://github.com/gudduarnav/project-optimization-beamforming}}
+\end{zhtitleBox}
+
+\vspace{1.2em}
+
+\begin{zhProblemBox}[title={問題 1 -- 帶界最小平方法（Bound-Constrained Least-Squares）}]
+考慮以下帶界（上下界）限制的最小平方法問題：
+\begin{align}
+  \min_{\bm{x} \in \mathbb{R}^n} \;\; \lVert A \bm{x} - b \rVert_2^2
+  \quad \text{s.t.} \quad 0.1 \le \bm{x} \le 3.14,
+\end{align}
+其中 $A \in \mathbb{R}^{m \times n}$，$b \in \mathbb{R}^m$，向量 $\ell, u \in \mathbb{R}^n$ 分別為
+變數向量 $\bm{x}$ 的一般下界與上界；在本次作業中，假設 $\bm{x}$ 的每一個分量皆滿足
+$0.1 \le x_i \le 3.14$。
+
+\medskip
+\noindent
+\textbf{作業要求：} 使用 CVX（或其他類似的凸優化工具箱）將上述問題寫成標準形式並求解，
+求出最優解向量 $\bm{x}^\star$，並簡要說明在 $0.1 \le x_i \le 3.14$ 的限制下，你對解
+$\bm{x}^\star$ 各分量可以得到哪些推論（例如哪些分量貼近界線，以及這對殘差
+$\lVert A \bm{x} - b \rVert_2^2$ 有何影響）。
+\end{zhProblemBox}
+
+\vspace{1em}
+
+\begin{zhProblemBox}[title={問題 2 -- 平均旁瓣能量最小化（Average Sidelobe Energy Minimization）}]
+考慮一個具 $M$ 個天線元件的均勻線性陣列（ULA）波束成形器，其複數權重向量為
+$\bm{w} \in \mathbb{C}^M$。令 $\bm{P} \in \mathbb{C}^{M \times M}$ 為一個半正定矩陣，用來描述在某一
+角度區間內的平均旁瓣能量；令 $\bm{a}(\theta_0)$ 為指向期望主波束方向 $\theta_0$ 的陣列響應向量
+（steering vector），在本次作業中令期望主波束角度為 $\theta_0 = +10^\circ$。我們希望尋找可以
+最小化平均旁瓣能量的波束成形權重：
+\begin{align}
+  \min_{\bm{w} \in \mathbb{C}^M} \;\; \bm{w}^H \bm{P} \bm{w}
+  \quad \text{s.t.} \quad \bm{w}^H \bm{a}(\theta_0) = 1.
+\end{align}
+
+\noindent
+\textbf{提示：} 在 CVX 中，可使用 \verb|quad_form(w, P)| 來表示二次型 $\bm{w}^H \bm{P} \bm{w}$。
+
+\medskip
+\noindent
+(a) 在 CVX 中實作上述優化問題，並針對 $\theta_0 = +10^\circ$ 求得最優的波束成形向量 $\bm{w}$。\\
+(b) 繪出角度頻譜（例如波束圖 / beampattern），說明旁瓣行為與特性，特別是主瓣在
+    $\theta_0 = +10^\circ$ 附近的形狀與旁瓣抑制效果，並寫出你的觀察與推論。
+\end{zhProblemBox}
+
+\vspace{1em}
+
+\begin{zhProblemBox}[title={問題 3 -- 最壞情況旁瓣最小化（Worst-Case Sidelobe Minimization）}]
+接著考慮魯棒波束成形設計，我們希望在一組旁瓣角度集合
+$\{\theta_1, \ldots, \theta_L\}$ 上最小化\emph{最壞情況}的旁瓣電平。令 $\bm{a}(\theta)$ 表示角度
+$\theta$ 處的陣列響應向量。引入輔助實數變數 $t$，考慮以下優化問題：
+\begin{align}
+  \min_{\bm{w}, t} \;\; t
+  \quad \text{s.t.} \quad
+  \lvert \bm{w}^H \bm{a}(\theta_\ell) \rvert^2 \le t,\quad \ell = 1, \ldots, L, \qquad
+  \bm{w}^H \bm{a}(\theta_0) = 1.
+\end{align}
+
+\noindent
+(a) 給定天線數 $M$ 與旁瓣角度區間，求解上述問題並繪出對應的角度頻譜。
+將結果與問題 2 的設計進行比較。\\
+(b) 將天線數設為 $M = 32$，重新設計波束成形器並繪出角度頻譜。說明增加 $M$（相較於 (a)）對主瓣寬度
+與旁瓣電平造成的影響。\\
+(c) 考慮以下兩種不同的期望主瓣區間：
+\begin{itemize}
+  \item[(i)] $\theta_\ell = -10^\circ$, $\theta_u = +10^\circ$，
+  \item[(ii)] $\theta_\ell = 45^\circ$, $\theta_u = 55^\circ$。
+\end{itemize}
+對每一種主瓣區間，設計對應的波束成形器並繪出角度頻譜，說明主瓣寬度與旁瓣行為之間的取捨關係。
+\end{zhProblemBox}
+
+\vspace{1em}
+
+\begin{zhProblemBox}[title={問題 4 -- 含 SINR 約束的下行波束成形（Downlink Beamforming with SINR Constraints）}]
+考慮一個基地台（BS）具備 $M$ 根天線，同時為 $N$ 個行動用戶（MS）進行下行傳輸。每個用戶僅有單一天線。
+令 $\bm{h}_k \in \mathbb{C}^M$ 為從基地台到第 $k$ 位用戶的通道向量，$\bm{w}_k \in \mathbb{C}^M$ 為
+第 $k$ 位用戶的波束成形向量（$k = 1, \ldots, N$）。假設用戶 $k$ 的接收訊號同時受到多使用者干擾與
+雜訊（變異數為 $\sigma_k^2$）影響，且用戶 $k$ 的 SINR 要求為 $\gamma_k > 0$。用戶 $k$ 的下行 SINR
+可寫為
+\begin{align}
+  \mathrm{SINR}_k
+  = \frac{\bigl\lvert \bm{h}_k^H \bm{w}_k \bigr\rvert^2}
+         {\displaystyle \sum_{\substack{j = 1 \\ j \ne k}}^{N}
+            \bigl\lvert \bm{h}_k^H \bm{w}_j \bigr\rvert^2 + \sigma_k^2 }.
+\end{align}
+
+\noindent
+我們希望在滿足所有用戶 SINR 要求的情況下，最小化基地台的總發射功率：
+\begin{align}
+  \min_{\{\bm{w}_k\}_{k=1}^N} \;\; \sum_{k=1}^N \lVert \bm{w}_k \rVert_2^2
+  \quad \text{s.t.} \quad
+  \frac{\bigl\lvert \bm{h}_k^H \bm{w}_k \bigr\rvert^2}
+       {\displaystyle \sum_{\substack{j = 1 \\ j \ne k}}^{N}
+          \bigl\lvert \bm{h}_k^H \bm{w}_j \bigr\rvert^2 + \sigma_k^2 }
+  \ge \gamma_k,\quad k = 1, \ldots, N.
+\end{align}
+
+\medskip
+\noindent
+(a) 將上述問題重新寫成適合在 CVX 中求解的凸優化問題（例如以二階錐規劃 SOCP 形式表示）。\\
+(b) 以 $M = 32$ 根天線與 $N = 5$ 個行動用戶進行數值模擬，假設每位用戶的雜訊功率對應
+    至 $-70\,\mathrm{dBm}$ 的雜訊變異數，且所有用戶的 SINR 目標皆為 $\gamma_k = 10\,\mathrm{dB}$。
+    驗證在最小總發射功率的設計下，所有用戶的 SINR 均滿足其目標值，並簡要說明基地台對各用戶
+    的功率分配情形與你的觀察。
+\end{zhProblemBox}
+
+\end{document}

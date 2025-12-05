@@ -1,0 +1,190 @@
+\documentclass[11pt,letterpaper]{article}
+\usepackage[margin=0.65in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage[most]{tcolorbox}
+\usepackage{fancyhdr}
+\usepackage{microtype}
+\usepackage{mathpazo}
+\usepackage{hyperref}
+
+\definecolor{themedark}{RGB}{0,56,116}
+\definecolor{thememid}{RGB}{0,120,210}
+\definecolor{themelight}{RGB}{243,248,254}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=themedark,
+  urlcolor=thememid,
+  citecolor=themedark
+}
+
+\tcbset{
+  problemstyle/.style={
+    enhanced,
+    breakable,
+    colframe=themedark,
+    colback=themelight,
+    boxrule=0.9pt,
+    arc=3pt,
+    outer arc=3pt,
+    fonttitle=\bfseries,
+    coltitle=white,
+    colbacktitle=themedark,
+    attach boxed title to top left={yshift=-2mm,xshift=2mm},
+    boxed title style={boxrule=0pt,sharp corners}
+  }
+}
+
+\newtcolorbox{problemBox}[1][]{problemstyle,#1}
+
+\newtcolorbox{titleBox}{
+  enhanced,
+  colback=themelight,
+  colframe=thememid,
+  boxrule=1pt,
+  arc=4pt,
+  left=8mm,right=8mm,top=3mm,bottom=4mm,
+  overlay={
+    \draw[themedark,line width=1.25pt] (frame.north west) -- (frame.north east);
+  }
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{themedark} Optimization Theory -- Lab Homework}
+\fancyhead[R]{\small\color{themedark} CVX Project}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{themedark}\leaders\hrule height \headrulewidth\hfill}}
+\setlength{\headheight}{15pt}
+
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{titleBox}
+  \centering
+  {\small\textsc{Optimization Theory Course}}\\[0.2em]
+  {\LARGE\bfseries Optimization Theory Lab -- CVX Project}\\[0.35em]
+  {\large\color{themedark} Lab Homework Questions}\\[0.25em]
+  {\normalsize Last date of submission: 02-Dec-2025}\\[0.5em]
+  {\footnotesize\color{themedark}\itshape
+    Source code (MATLAB/CVX and Python/CVXPY):\\
+    \url{https://github.com/gudduarnav/project-optimization-beamforming}}
+\end{titleBox}
+
+\vspace{1.5em}
+
+\begin{problemBox}[title={Problem 1 -- Bound-Constrained Least-Squares}]
+Consider the bound-constrained least-squares problem
+\begin{align}
+  \min_{\bm{x} \in \mathbb{R}^n} \;\; \lVert A \bm{x} - b \rVert_2^2
+  \quad \text{s.t.} \quad 0.1 \le \bm{x} \le 3.14,
+\end{align}
+where $A \in \mathbb{R}^{m \times n}$, $b \in \mathbb{R}^m$, and the vectors $\ell, u \in \mathbb{R}^n$
+denote generic lower and upper bounds on $\bm{x}$, and in this homework each component of $\bm{x}$ is
+constrained to lie between $0.1$ and $3.14$.
+
+\medskip
+\noindent
+\textbf{Task:} Formulate and solve this problem using CVX (or a similar convex optimization toolbox),
+report the optimal vector $\bm{x}^\star$, and briefly discuss what you can infer from its entries given
+the bounds $0.1 \le x_i \le 3.14$ (e.g., which components are active at the bounds and how this affects
+the fit $\lVert A \bm{x} - b \rVert_2^2$).
+\end{problemBox}
+
+\vspace{1em}
+
+\begin{problemBox}[title={Problem 2 -- Average Sidelobe Energy Minimization}]
+Consider a uniform linear array (ULA) beamformer with complex weight vector $\bm{w} \in \mathbb{C}^M$.
+Let $\bm{P} \in \mathbb{C}^{M \times M}$ be a positive semidefinite matrix that characterizes the average
+sidelobe energy in a given angular region, and let $\bm{a}(\theta_0)$ denote the steering vector of the
+desired look direction $\theta_0$ (for this homework, take $\theta_0 = +10^\circ$). We want to find
+beamforming weights that minimize the average
+sidelobe energy:
+\begin{align}
+  \min_{\bm{w} \in \mathbb{C}^M} \;\; \bm{w}^H \bm{P} \bm{w}
+  \quad \text{s.t.} \quad \bm{w}^H \bm{a}(\theta_0) = 1.
+\end{align}
+
+\noindent
+Hint: In CVX, you can use \verb|quad_form(w, P)| to represent $\bm{w}^H \bm{P} \bm{w}$.
+
+\medskip
+\noindent
+(a) Implement the above problem in CVX and obtain the optimal beamforming vector $\bm{w}$ for
+    $\theta_0 = +10^\circ$.\\
+(b) Plot the angle spectrum (e.g., beampattern) and comment on the sidelobe behavior. In particular,
+    discuss how the beampattern behaves around $\theta_0 = +10^\circ$ and what you can infer about
+    mainlobe sharpness and sidelobe suppression.
+\end{problemBox}
+
+\vspace{1em}
+
+\begin{problemBox}[title={Problem 3 -- Worst-Case Sidelobe Minimization}]
+Now consider robust beamforming where we minimize the worst-case sidelobe level over a set of
+sidelobe angles $\{\theta_1, \ldots, \theta_L\}$. Let $\bm{a}(\theta)$ denote the steering vector at
+angle $\theta$. We introduce an auxiliary scalar $t$ and solve
+\begin{align}
+  \min_{\bm{w}, t} \;\; t
+  \quad \text{s.t.} \quad
+  \lvert \bm{w}^H \bm{a}(\theta_\ell) \rvert^2 \le t,\quad \ell = 1, \ldots, L, \qquad
+  \bm{w}^H \bm{a}(\theta_0) = 1.
+\end{align}
+
+\noindent
+(a) For a given number of antennas $M$ and sidelobe region, solve the above problem and plot the
+resulting angle spectrum. Compare it with the result of Problem 2.\\
+(b) Repeat the design for $M = 32$ antennas and plot the angle spectrum. Comment on how increasing
+$M$ (relative to part (a)) affects the mainlobe width and sidelobe levels.\\
+(c) Consider two different desired mainlobe regions:
+\begin{itemize}
+  \item[(i)] $\theta_\ell = -10^\circ$, $\theta_u = +10^\circ$,
+  \item[(ii)] $\theta_\ell = 45^\circ$, $\theta_u = 55^\circ$.
+\end{itemize}
+For each case, design the beamformer, plot the angle spectrum, and comment on the trade-offs in
+mainlobe width and sidelobe behavior.
+\end{problemBox}
+
+\vspace{1em}
+
+\begin{problemBox}[title={Problem 4 -- Downlink Beamforming with SINR Constraints}]
+A base station (BS) equipped with $M$ antennas serves $N$ mobile stations (MSs) simultaneously in
+the downlink. Each MS has a single antenna. Let $\bm{h}_k \in \mathbb{C}^M$ denote the channel vector
+from the BS to user $k$, and let $\bm{w}_k \in \mathbb{C}^M$ be the beamforming vector for user
+$k$, $k = 1, \ldots, N$. Assume the received signal at user $k$ is affected by multiuser
+interference and noise with variance $\sigma_k^2$, and the SINR requirement for user $k$ is
+$\gamma_k > 0$. The downlink SINR of user $k$ is
+\begin{align}
+  \mathrm{SINR}_k
+  = \frac{\bigl\lvert \bm{h}_k^H \bm{w}_k \bigr\rvert^2}
+         {\displaystyle \sum_{\substack{j = 1 \\ j \ne k}}^{N}
+            \bigl\lvert \bm{h}_k^H \bm{w}_j \bigr\rvert^2 + \sigma_k^2 }.
+\end{align}
+
+\noindent
+We want to minimize the total transmit power while satisfying all SINR constraints:
+\begin{align}
+  \min_{\{\bm{w}_k\}_{k=1}^N} \;\; \sum_{k=1}^N \lVert \bm{w}_k \rVert_2^2
+  \quad \text{s.t.} \quad
+  \frac{\bigl\lvert \bm{h}_k^H \bm{w}_k \bigr\rvert^2}
+       {\displaystyle \sum_{\substack{j = 1 \\ j \ne k}}^{N}
+          \bigl\lvert \bm{h}_k^H \bm{w}_j \bigr\rvert^2 + \sigma_k^2 }
+  \ge \gamma_k,\quad k = 1, \ldots, N.
+\end{align}
+
+\medskip
+\noindent
+(a) Reformulate this problem as a convex (e.g., second-order cone) optimization problem suitable
+for CVX.\\
+(b) Implement the problem numerically for a system with $M = 32$ antennas and $N = 5$ mobile stations,
+    assuming a noise variance corresponding to $-70\,\mathrm{dBm}$ for each user and SINR targets
+    $\gamma_k = 10\,\mathrm{dB}$, $k = 1,\ldots,5$. Verify that all users meet their SINR targets
+    with minimum total transmit power, and briefly discuss the resulting power allocation across users.
+\end{problemBox}
+
+\end{document}
